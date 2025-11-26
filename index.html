@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="page-title">Gestión AutoEspaña | Importación & Homologación</title>
+    <meta name="description" content="Expertos en matriculación, importación y homologación de vehículos en España.">
+    <meta name="keywords" content="Gestoría de vehículos, Matriculación coches importados, Homologación unitaria, Ficha técnica reducida, Transferencia de vehículos, Cambio de nombre coche, Importación Alemania España, Placas verdes, Certificado COC, Etiqueta DGT, Distintivo ambiental ZBE, Pasar ITV, DUA Aduanas, Impuesto matriculación 576, Gestoría tráfico, NIE, TIE, Modelo 210, Representación fiscal no residentes, Certificado digital">
+    <style>
+        :root {
+            --primary-blue: #005bea;
+            --dark-bg: #0b1121;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --accent-cyan: #00c6fb;
+            --accent-green: #10b981;
+            --text-white: #f8fafc;
+            --text-gray: #94a3b8;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; scroll-behavior: smooth; }
+
+        body {
+            background-color: var(--dark-bg);
+            color: var(--text-white);
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* --- CANVAS DE PARTÍCULAS --- */
+        #particleCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1; /* Detrás de todo */
+            pointer-events: none; /* Permite clics a través */
+        }
+
+        /* --- HEADER & IDIOMAS --- */
+        header {
+            position: fixed;
+            top: 0; width: 100%;
+            padding: 15px 5%;
+            background: rgba(11, 17, 33, 0.85);
+            backdrop-filter: blur(12px);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .logo { 
+            font-size: 1.3rem; 
+            font-weight: 900; 
+            letter-spacing: 1px; 
+            background: linear-gradient(90deg, #fff, var(--accent-cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 25px;
+        }
+
+        /* Banderas */
+        .lang-switcher {
+            display: flex;
+            gap: 15px;
+            padding: 5px 15px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 30px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .lang-btn {
+            cursor: pointer;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            opacity: 0.5;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            filter: grayscale(80%);
+            border: 2px solid transparent;
+        }
+
+        .lang-btn img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
+            display: block;
+        }
+
+        .lang-btn:hover, .lang-btn.active {
+            opacity: 1;
+            transform: scale(1.2);
+            filter: grayscale(0%);
+            box-shadow: 0 0 10px var(--accent-cyan);
+            border-color: rgba(255,255,255,0.5);
+        }
+
+        .cta-btn {
+            padding: 10px 25px;
+            background: linear-gradient(90deg, var(--primary-blue), var(--accent-cyan));
+            color: white;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 0.9rem;
+            transition: 0.3s;
+            box-shadow: 0 5px 15px rgba(0, 91, 234, 0.3);
+        }
+        .cta-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0, 91, 234, 0.5); }
+
+        /* --- HERO --- */
+        .hero {
+            min-height: 100vh;
+            padding: 140px 5% 60px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            perspective: 1000px;
+            overflow: hidden;
+        }
+        
+        /* Fondo degradado sutil detrás de las partículas */
+        .hero::before {
+            content: ''; position: absolute; top: -20%; right: -10%; width: 60%; height: 80%;
+            background: radial-gradient(circle, rgba(0, 91, 234, 0.15), transparent 60%);
+            filter: blur(60px); z-index: -2;
+        }
+
+        .hero-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            max-width: 1400px;
+            width: 100%;
+            align-items: center;
+        }
+
+        .hero-text h1 {
+            font-size: 3.8rem;
+            line-height: 1.1;
+            margin-bottom: 25px;
+        }
+        
+        .hero-text p {
+            font-size: 1.15rem;
+            color: var(--text-gray);
+            margin-bottom: 35px;
+            max-width: 550px;
+            line-height: 1.6;
+        }
+
+        .tags { display: flex; gap: 10px; margin-bottom: 30px; flex-wrap: wrap; }
+        .tag { 
+            font-size: 0.85rem; padding: 6px 14px; border-radius: 20px; 
+            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #cbd5e1;
+        }
+
+        /* --- COCHE 3D --- */
+        .car-visual {
+            position: relative;
+            height: 450px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transform-style: preserve-3d;
+        }
+
+        .car-img {
+            width: 110%;
+            max-width: 750px;
+            filter: drop-shadow(0 30px 30px rgba(0,0,0,0.5));
+            transform: translateZ(40px);
+            transition: transform 0.1s ease-out;
+        }
+
+        /* --- SERVICIOS PRINCIPALES (Grid) --- */
+        .services { padding: 80px 5% 40px; max-width: 1400px; margin: 0 auto; }
+        .section-title { text-align: center; font-size: 2.5rem; margin-bottom: 60px; }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 25px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 20px;
+            padding: 35px;
+            position: relative;
+            transform-style: preserve-3d;
+            transform: perspective(1000px);
+            transition: transform 0.2s;
+            backdrop-filter: blur(5px); 
+        }
+
+        .card:hover { border-color: var(--accent-cyan); }
+        .card-content { transform: translateZ(20px); }
+        .icon { font-size: 2.5rem; margin-bottom: 20px; display: block; }
+        .card h3 { font-size: 1.3rem; margin-bottom: 15px; color: var(--text-white); }
+        .card p { font-size: 0.95rem; color: var(--text-gray); line-height: 1.5; margin-bottom: 20px;}
+        .card ul { list-style: none; color: #cbd5e1; font-size: 0.9rem; padding-left: 0; }
+        .card ul li { margin-bottom: 8px; display: flex; align-items: flex-start; gap: 8px; }
+        .card ul li::before { content: '✓'; color: var(--accent-cyan); font-weight: bold; font-size: 1.1em; line-height: 1.2; }
+
+        .flag-bg {
+            position: absolute; top: 20px; right: 20px; 
+            font-size: 4rem; opacity: 0.05; 
+            transform: rotate(15deg) translateZ(10px);
+            pointer-events: none;
+        }
+
+        /* --- SERVICIOS ADICIONALES (Listas) --- */
+        .additional-services {
+            padding: 40px 5% 80px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .section-subtitle {
+            text-align: center;
+            font-size: 1.8rem;
+            color: var(--accent-cyan);
+            margin-bottom: 40px;
+            font-weight: 600;
+        }
+        .two-column-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 30px;
+            margin-top: 40px;
+        }
+        .list-card {
+            background: rgba(30, 41, 59, 0.5); 
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 12px;
+            padding: 30px;
+            backdrop-filter: blur(5px);
+            height: 100%; /* Asegura que todos los cuadros tengan la misma altura */
+        }
+        .list-card h3 {
+            color: var(--accent-cyan);
+            margin-bottom: 20px;
+            border-bottom: 2px solid rgba(0, 198, 251, 0.2);
+            padding-bottom: 10px;
+            font-size: 1.2rem;
+        }
+        .list-card ul {
+            list-style-type: none;
+            padding-left: 0;
+            color: var(--text-gray);
+            font-size: 0.95rem;
+        }
+        .list-card ul li {
+            margin-bottom: 12px;
+            display: flex;
+            align-items: flex-start;
+        }
+        .list-card ul li::before {
+            content: '→'; 
+            color: var(--accent-cyan);
+            font-weight: bold;
+            margin-right: 10px;
+            font-size: 1.1em;
+            line-height: 1.2;
+        }
+
+        /* --- FOOTER --- */
+        footer {
+            background: #020617;
+            padding: 60px 5%;
+            margin-top: 80px;
+            border-top: 1px solid rgba(255,255,255,0.05);
+            text-align: center;
+            position: relative;
+            z-index: 10;
+        }
+        
+        .contact-grid {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            flex-wrap: wrap;
+            margin-top: 30px;
+        }
+        .contact-item span { color: var(--accent-cyan); font-weight: bold; display: block; margin-bottom: 5px; }
+
+        @media (max-width: 900px) {
+            .hero-content { grid-template-columns: 1fr; text-align: center; }
+            .hero-text { margin-bottom: 40px; }
+            .hero-text p { margin: 0 auto 30px; }
+            .tags { justify-content: center; }
+            .header-right { gap: 10px; }
+            .lang-switcher { padding: 5px 10px; }
+            .hero-text h1 { font-size: 3rem; }
+            .car-img { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="particleCanvas"></canvas>
+
+    <header>
+        <div class="logo">GESTIÓN AUTOESPAÑA</div>
+        <div class="header-right">
+            <div class="lang-switcher">
+                <div class="lang-btn active" onclick="changeLang('es', this)" title="Español">
+                    <img src="https://flagcdn.com/w40/es.png" alt="ES">
+                </div>
+                <div class="lang-btn" onclick="changeLang('en', this)" title="English">
+                    <img src="https://flagcdn.com/w40/gb.png" alt="EN">
+                </div>
+                <div class="lang-btn" onclick="changeLang('de', this)" title="Deutsch">
+                    <img src="https://flagcdn.com/w40/de.png" alt="DE">
+                </div>
+            </div>
+            <a href="https://wa.me/34634737582" class="cta-btn" id="btn-call">✆ 634 737 582</a>
+        </div>
+    </header>
+
+    <section class="hero">
+        <div class="hero-content">
+            <div class="hero-text">
+                <div class="tags">
+                    <span class="tag">COC / Fichas</span>
+                    <span class="tag">ITV</span>
+                    <span class="tag">ZBE</span>
+                    <span class="tag">Importación 🇩🇪</span>
+                    <span class="tag">Transferencias</span>
+                </div>
+                
+                <h1 id="hero-title">Ingeniería y Gestión<br><span style="color:var(--accent-cyan)">Integral del Vehículo</span></h1>
+                <p id="hero-desc">Homologaciones unitarias, fichas técnicas reducidas y transferencias nacionales. Tu coche legal, rápido.</p>
+                
+                <div style="display: flex; gap: 15px; flex-wrap: wrap; justify-content: inherit;">
+                    <a href="#servicios" class="cta-btn" id="btn-services">Ver Servicios</a>
+                </div>
+            </div>
+
+            <div class="car-visual">
+                <img src="blue-sport-car.png" alt="Coche Deportivo Azul" class="car-img" id="carImage">
+            </div>
+        </div>
+    </section>
+
+    <section class="services" id="servicios">
+        <h2 class="section-title" id="serv-title">Nuestros Servicios</h2>
+        
+        <div class="grid">
+            <div class="card" onmousemove="tiltCard(event, this)" onmouseleave="resetCard(this)">
+                <span class="flag-bg">🌍</span>
+                <div class="card-content">
+                    <span class="icon">🇪🇸</span>
+                    <h3 id="s1-t">Matriculación de Vehículos Nacionales</h3>
+                    <p id="s1-d">Gestionamos de forma ágil y eficiente la matriculación de tu vehículo nuevo o usado adquirido en España.</p>
+                    <ul>
+                        <li id="s1-l1">Vehículos nuevos y de ocasión</li>
+                        <li id="s1-l2">Impuesto de matriculación (modelo 576)</li>
+                        <li id="s1-l3">Trámites con DGT</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="card" onmousemove="tiltCard(event, this)" onmouseleave="resetCard(this)">
+                <span class="flag-bg">🇩🇪</span>
+                <div class="card-content">
+                    <span class="icon">✈️</span>
+                    <h3 id="s2-t">Importación y Rematriculación</h3>
+                    <p id="s2-d">Nos encargamos de todo el proceso para que tu vehículo extranjero circule legalmente en España.</p>
+                    <ul>
+                        <li id="s2-l1">Vehículos de la UE y extracomunitarios</li>
+                        <li id="s2-l2">Placas Verdes (Permiso temporal)</li>
+                        <li id="s2-l3">Despacho de Aduanas (DUA)</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="card" onmousemove="tiltCard(event, this)" onmouseleave="resetCard(this)">
+                <span class="flag-bg">📝</span>
+                <div class="card-content">
+                    <span class="icon">📐</span>
+                    <h3 id="s3-t">Ingeniería y Homologación</h3>
+                    <p id="s3-d">Departamento técnico para legalizar reformas, fichas técnicas y certificados necesarios para la ITV.</p>
+                    <ul>
+                        <li id="s3-l1">Fichas Técnicas Reducidas</li>
+                        <li id="s3-l2">Certificado de Conformidad (COC)</li>
+                        <li id="s3-l3">Homologaciones Individuales y Reformas</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="card" onmousemove="tiltCard(event, this)" onmouseleave="resetCard(this)">
+                <span class="flag-bg">♻️</span>
+                <div class="card-content">
+                    <span class="icon">🏷️</span>
+                    <h3 id="s4-t">Distintivos Ambientales (DGT)</h3>
+                    <p id="s4-d">Gestión rápida de tu etiqueta para cumplir con las normativas de Zonas de Bajas Emisiones (ZBE).</p>
+                    <ul>
+                        <li id="s4-l1">Etiqueta Cero Emisiones</li>
+                        <li id="s4-l2">Etiqueta ECO</li>
+                        <li id="s4-l3">Etiquetas C y B</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="card" onmousemove="tiltCard(event, this)" onmouseleave="resetCard(this)">
+                <span class="flag-bg">📜</span>
+                <div class="card-content">
+                    <span class="icon">🔄</span>
+                    <h3 id="s5-t">Transferencias y Cambios de Titularidad</h3>
+                    <p id="s5-d">Cambia de nombre tu vehículo con la máxima agilidad y seguridad jurídica. Compraventa entre particulares.</p>
+                    <ul>
+                        <li id="s5-l1">Gestión integral online/presencial</li>
+                        <li id="s5-l2">Impuesto de Transmisiones Patrimoniales (ITP)</li>
+                        <li id="s5-l3">Informes de antecedentes DGT</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="card" onmousemove="tiltCard(event, this)" onmouseleave="resetCard(this)">
+                <span class="flag-bg">✅</span>
+                <div class="card-content">
+                    <span class="icon">🔎</span>
+                    <h3 id="s6-t">Asesoría y Trámites Complementarios</h3>
+                    <p id="s6-d">Te asesoramos en cualquier duda y realizamos gestiones adicionales para tu tranquilidad.</p>
+                    <ul>
+                        <li id="s6-l1">Citas previas ITV</li>
+                        <li id="s6-l2">Duplicados Permiso de Circulación</li>
+                        <li id="s6-l3">Bajas temporales/definitivas</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <section class="additional-services">
+        <h2 class="section-title" id="add-serv-title">Otros Trámites Detallados</h2>
+        
+        <div class="two-column-list">
+            
+            <div class="list-card">
+                <h3 id="ext-title">Trámites de Extranjería y Otros</h3>
+                <ul>
+                    <li id="ext-l1">Solicitud de NIE (no residentes y residentes)</li>
+                    <li id="ext-l2">Solicitud de TIE (tarjeta física)</li>
+                    <li id="ext-l3">Renovaciones de autorizaciones de residencia</li>
+                    <li id="ext-l4">Certificado de registro de ciudadano comunitario</li>
+                    <li id="ext-l5">Solicitud de citas previas</li>
+                    <li id="ext-l6">Certificados de residencia fiscal</li>
+                    <li id="ext-l7">Recursos administrativos</li>
+                </ul>
+            </div>
+            
+            <div class="list-card">
+                <h3 id="fis-title">Trámites Fiscales para No Residentes</h3>
+                <ul>
+                    <li id="fis-l1">Modelo 210 (IRNR para no residentes)</li>
+                    <li id="fis-l2">Modelos 211, 213 y 216</li>
+                    <li id="fis-l3">Obtención de NIF de no residente</li>
+                    <li id="fis-l4">Representación fiscal de no residentes</li>
+                </ul>
+            </div>
+            
+            <div class="list-card">
+                <h3 id="veh-title">Trámites de Tráfico y Vehículos</h3>
+                <ul>
+                    <li id="veh-l1">Matriculación de vehículos importados</li>
+                    <li id="veh-l2">Transferencia de titularidad</li>
+                    <li id="veh-l3">Pago de IVTM (Impuesto Municipal)</li>
+                    <li id="veh-l4">Gestión de tasas DGT</li>
+                    <li id="veh-l5">Traducción jurada y gestión de fichas técnicas</li>
+                </ul>
+            </div>
+            
+            <div class="list-card">
+                <h3 id="cert-title">Solicitud de Certificado Digital</h3>
+                <ul>
+                    <li id="cert-l1">Gestión de la obtención del certificado digital para personas y empresas.</li>
+                    <li id="cert-l2">Asesoramiento completo sobre el proceso y uso.</li>
+                </ul>
+            </div>
+            
+        </div>
+    </section>
+
+    <footer>
+        <h3 class="logo" style="margin-bottom:20px;">GESTIÓN AUTOESPAÑA</h3>
+        <div class="contact-grid">
+            <div class="contact-item">
+                <span>Email</span> Gestionautomallorca@gmail.com
+            </div>
+            <div class="contact-item">
+                <span>Web</span> Gestionautoespaña.es
+            </div>
+            <div class="contact-item">
+                <span>WhatsApp</span> +34 634 737 582
+            </div>
+        </div>
+        <p style="margin-top: 40px; color: #64748b; font-size: 0.8rem;">© 2025 Gestión AutoEspaña</p>
+    </footer>
+
+    <script>
+        // --- SISTEMA DE PARTÍCULAS (CANVAS) ---
+        const canvas = document.getElementById('particleCanvas');
+        const ctx = canvas.getContext('2d');
+
+        let particlesArray;
+
+        // Ajustar tamaño canvas
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', () => {
+            resizeCanvas();
+            initParticles();
+        });
+        resizeCanvas();
+
+        // Clase Partícula
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 2 + 0.5; // Tamaño entre 0.5 y 2.5
+                this.speedX = Math.random() * 1 - 0.5; // Velocidad X
+                this.speedY = Math.random() * 1 - 0.5; // Velocidad Y
+                this.color = '#00c6fb'; // Color Cyan (Accent)
+            }
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                
+                // Rebote en bordes
+                if (this.x > canvas.width || this.x < 0) this.speedX = -this.speedX;
+                if (this.y > canvas.height || this.y < 0) this.speedY = -this.speedY;
+            }
+            draw() {
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function initParticles() {
+            particlesArray = [];
+            let numberOfParticles = (canvas.width * canvas.height) / 15000; // Densidad
+            for (let i = 0; i < numberOfParticles; i++) {
+                particlesArray.push(new Particle());
+            }
+        }
+
+        function animateParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (let i = 0; i < particlesArray.length; i++) {
+                particlesArray[i].update();
+                particlesArray[i].draw();
+                
+                // Dibujar líneas de conexión (Efecto Red/Ingeniería)
+                for (let j = i; j < particlesArray.length; j++) {
+                    const dx = particlesArray[i].x - particlesArray[j].x;
+                    const dy = particlesArray[i].y - particlesArray[j].y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (distance < 120) { // Distancia de conexión
+                        ctx.beginPath();
+                        ctx.strokeStyle = `rgba(0, 198, 251, ${1 - distance/120})`; // Opacidad variable
+                        ctx.lineWidth = 0.5;
+                        ctx.moveTo(particlesArray[i].x, particlesArray[i].y);
+                        ctx.lineTo(particlesArray[j].x, particlesArray[j].y);
+                        ctx.stroke();
+                    }
+                }
+            }
+            requestAnimationFrame(animateParticles);
+        }
+
+        initParticles();
+        animateParticles();
+
+
+        // --- LÓGICA DE IDIOMAS (ACTUALIZADA con el Certificado Digital) ---
+        const translations = {
+            es: {
+                pageTitle: 'Gestión AutoEspaña | Importación & Homologación',
+                heroTitle: 'Ingeniería y Gestión<br><span style="color:var(--accent-cyan)">Integral del Vehículo</span>',
+                heroDesc: 'Homologaciones unitarias, fichas técnicas reducidas y transferencias nacionales. Tu coche legal, rápido.',
+                btnCall: '✆ 634 737 582',
+                btnServices: 'Ver Servicios',
+                secTitle: 'Nuestros Servicios',
+                s1t: 'Matriculación de Vehículos Nacionales',
+                s1d: 'Gestionamos de forma ágil y eficiente la matriculación de tu vehículo nuevo o usado adquirido en España.',
+                s1l1: 'Vehículos nuevos y de ocasión',
+                s1l2: 'Impuesto de matriculación (modelo 576)',
+                s1l3: 'Trámites con DGT',
+                s2t: 'Importación y Rematriculación',
+                s2d: 'Nos encargamos de todo el proceso para que tu vehículo extranjero circule legalmente en España.',
+                s2l1: 'Vehículos de la UE y extracomunitarios',
+                s2l2: 'Placas Verdes (Permiso temporal)',
+                s2l3: 'Despacho de Aduanas (DUA)',
+                s3t: 'Ingeniería y Homologación',
+                s3d: 'Departamento técnico para legalizar reformas, fichas técnicas y certificados necesarios para la ITV.',
+                s3l1: 'Fichas Técnicas Reducidas',
+                s3l2: 'Certificado de Conformidad (COC)',
+                s3l3: 'Homologaciones Individuales y Reformas',
+                s4t: 'Distintivos Ambientales (DGT)',
+                s4d: 'Gestión rápida de tu etiqueta para cumplir con las normativas de Zonas de Bajas Emisiones (ZBE).',
+                s4l1: 'Etiqueta Cero Emisiones',
+                s4l2: 'Etiqueta ECO',
+                s4l3: 'Etiquetas C y B',
+                s5t: 'Transferencias y Cambios de Titularidad',
+                s5d: 'Cambia de nombre tu vehículo con la máxima agilidad y seguridad jurídica. Compraventa entre particulares.',
+                s5l1: 'Gestión integral online/presencial',
+                s5l2: 'Impuesto de Transmisiones Patrimoniales (ITP)',
+                s5l3: 'Informes de antecedentes DGT',
+                s6t: 'Asesoría y Trámites Complementarios',
+                s6d: 'Te asesoramos en cualquier duda y realizamos gestiones adicionales para tu tranquilidad.',
+                s6l1: 'Citas previas ITV',
+                s6l2: 'Duplicados Permiso de Circulación',
+                s6l3: 'Bajas temporales/definitivas',
+                
+                // NUEVOS SERVICIOS
+                addServTitle: 'Otros Trámites Detallados',
+                extTitle: 'Trámites de Extranjería y Otros',
+                extL1: 'Solicitud de NIE (no residentes y residentes)',
+                extL2: 'Solicitud de TIE (tarjeta física)',
+                extL3: 'Renovaciones de autorizaciones de residencia',
+                extL4: 'Certificado de registro de ciudadano comunitario',
+                extL5: 'Solicitud de citas previas',
+                extL6: 'Certificados de residencia fiscal',
+                extL7: 'Recursos administrativos',
+                fisTitle: 'Trámites Fiscales para No Residentes',
+                fisL1: 'Modelo 210 (IRNR para no residentes)',
+                fisL2: 'Modelos 211, 213 y 216',
+                fisL3: 'Obtención de NIF de no residente',
+                fisL4: 'Representación fiscal de no residentes',
+                vehTitle: 'Trámites de Tráfico y Vehículos',
+                vehL1: 'Matriculación de vehículos importados',
+                vehL2: 'Transferencia de titularidad',
+                vehL3: 'Pago de IVTM (Impuesto Municipal)',
+                vehL4: 'Gestión de tasas DGT',
+                vehL5: 'Traducción jurada y gestión de fichas técnicas',
+                certTitle: 'Solicitud de Certificado Digital',
+                certL1: 'Gestión de la obtención del certificado digital para personas y empresas.',
+                certL2: 'Asesoramiento completo sobre el proceso y uso.'
+            },
+            en: {
+                pageTitle: 'AutoEspaña Management | Import & Homologation',
+                heroTitle: 'Vehicle Engineering &<br><span style="color:var(--accent-cyan)">Comprehensive Management</span>',
+                heroDesc: 'Individual approvals, reduced technical data sheets, and national transfers. Your car legalized, fast.',
+                btnCall: '✆ +34 634 737 582',
+                btnServices: 'View Services',
+                secTitle: 'Our Services',
+                s1t: 'National Vehicle Registration',
+                s1d: 'We manage the agile and efficient registration of your new or used vehicle acquired in Spain.',
+                s1l1: 'New and used vehicles',
+                s1l2: 'Registration tax (model 576)',
+                s1l3: 'DGT procedures',
+                s2t: 'Import and Re-registration',
+                s2d: 'We handle the entire process for your foreign vehicle to legally circulate in Spain.',
+                s2l1: 'EU and non-EU vehicles',
+                s2l2: 'Green Plates (Temporary permit)',
+                s2l3: 'Customs Clearance (DUA)',
+                s3t: 'Engineering and Homologation',
+                s3d: 'Technical department to legalize modifications, technical data sheets, and certificates required for ITV (MOT).',
+                s3l1: 'Reduced Technical Data Sheets',
+                s3l2: 'Certificate of Conformity (COC)',
+                s3l3: 'Individual Homologations & Modifications',
+                s4t: 'Environmental Badges (DGT)',
+                s4d: 'Fast management of your badge to comply with Low Emission Zone (LEZ) regulations.',
+                s4l1: 'Zero Emissions Badge',
+                s4l2: 'ECO Badge',
+                s4l3: 'C and B Badges',
+                s5t: 'Transfers and Change of Ownership',
+                s5d: 'Change the ownership of your vehicle with maximum agility and legal certainty. Private sales.',
+                s5l1: 'Comprehensive online/in-person management',
+                s5l2: 'Property Transfer Tax (ITP)',
+                s5l3: 'DGT background reports',
+                s6t: 'Consulting and Complementary Procedures',
+                s6d: 'We advise you on any doubts and carry out additional procedures for your peace of mind.',
+                s6l1: 'ITV (MOT) appointments',
+                s6l2: 'Duplicate Circulation Permit',
+                s6l3: 'Temporary/permanent vehicle deregistration',
+                
+                // NUEVOS SERVICIOS
+                addServTitle: 'Other Detailed Procedures',
+                extTitle: 'Immigration Procedures and Others',
+                extL1: 'NIE application (non-residents and residents)',
+                extL2: 'TIE application (physical card)',
+                extL3: 'Residence authorization renewals',
+                extL4: 'EU citizen registration certificate',
+                extL5: 'Prior appointment requests',
+                extL6: 'Tax residence certificates',
+                extL7: 'Administrative appeals',
+                fisTitle: 'Tax Procedures for Non-Residents',
+                fisL1: 'Form 210 (IRNR for non-residents)',
+                fisL2: 'Forms 211, 213, and 216',
+                fisL3: 'Obtaining non-resident NIF',
+                fisL4: 'Tax representation for non-residents',
+                vehTitle: 'Traffic and Vehicle Procedures',
+                vehL1: 'Registration of imported vehicles',
+                vehL2: 'Change of ownership (transfer)',
+                vehL3: 'IVTM payment (Municipal Tax)',
+                vehL4: 'DGT fee management',
+                vehL5: 'Sworn translation and technical data sheet management',
+                certTitle: 'Digital Certificate Application',
+                certL1: 'Management of obtaining the digital certificate for individuals and companies.',
+                certL2: 'Complete advice on the process and usage.'
+            },
+            de: {
+                pageTitle: 'AutoEspaña Management | Import & Homologation',
+                heroTitle: 'Fahrzeugtechnik &<br><span style="color:var(--accent-cyan)">Umfassendes Management</span>',
+                heroDesc: 'Einzelabnahmen, reduzierte technische Datenblätter und nationale Umschreibungen. Ihr Auto legal, schnell.',
+                btnCall: '✆ +34 634 737 582',
+                btnServices: 'Leistungen Ansehen',
+                secTitle: 'Unsere Leistungen',
+                s1t: 'Zulassung nationaler Fahrzeuge',
+                s1d: 'Wir verwalten die agile und effiziente Zulassung Ihres neuen oder gebrauchten Fahrzeugs, das in Spanien erworben wurde.',
+                s1l1: 'Neu- und Gebrauchtfahrzeuge',
+                s1l2: 'Zulassungssteuer (Modell 576)',
+                s1l3: 'DGT-Verfahren',
+                s2t: 'Import & Neuzulassung',
+                s2d: 'Wir kümmern uns um den gesamten Prozess, damit Ihr ausländisches Fahrzeug legal in Spanien fahren kann.',
+                s2l1: 'EU- und Nicht-EU-Fahrzeuge',
+                s2l2: 'Grüne Kennzeichen (Temporäre Erlaubnis)',
+                s2l3: 'Zollabfertigung (DUA)',
+                s3t: 'Technik & Homologation',
+                s3d: 'Technische Abteilung zur Legalisierung von Umbauten, technischen Datenblättern und für die ITV (TÜV) erforderlichen Zertifikaten.',
+                s3l1: 'Reduzierte Technische Datenblätter',
+                s3l2: 'Konformitätsbescheinigung (COC)',
+                s3l3: 'Einzelabnahmen & Umbauten',
+                s4t: 'Umweltplaketten (DGT)',
+                s4d: 'Schnelle Verwaltung Ihrer Plakette zur Einhaltung der Bestimmungen für Umweltzonen (ZBE).',
+                s4l1: 'Null-Emissions-Plakette',
+                s4l2: 'ECO-Plakette',
+                s4l3: 'C- und B-Plaketten',
+                s5t: 'Umschreibungen & Eigentumswechsel',
+                s5d: 'Ändern Sie den Namen Ihres Fahrzeugs mit maximaler Agilität und Rechtssicherheit. Privatverkäufe.',
+                s5l1: 'Umfassende Online-/Vor-Ort-Verwaltung',
+                s5l2: 'Grunderwerbssteuer (ITP)',
+                s5l3: 'DGT-Hintergrundberichte',
+                s6t: 'Beratung & Ergänzende Verfahren',
+                s6d: 'Wir beraten Sie bei allen Fragen und führen zusätzliche Verfahren für Ihre Ruhe durch.',
+                s6l1: 'ITV (TÜV) Termine',
+                s6l2: 'Duplikat Zulassungsbescheinigung',
+                s6l3: 'Temporäre/Dauerhafte Abmeldungen',
+                
+                // NUEVOS SERVICIOS
+                addServTitle: 'Weitere Detaillierte Verfahren',
+                extTitle: 'Ausländerverfahren und Sonstiges',
+                extL1: 'NIE-Antrag (Nichtansässige und Ansässige)',
+                extL2: 'TIE-Antrag (physische Karte)',
+                extL3: 'Verlängerungen der Aufenthaltsgenehmigung',
+                extL4: 'Meldebescheinigung für EU-Bürger',
+                extL5: 'Anforderung von Terminen im Voraus',
+                extL6: 'Bescheinigungen über den steuerlichen Wohnsitz',
+                extL7: 'Verwaltungsbeschwerden',
+                fisTitle: 'Steuerverfahren für Nichtansässige',
+                fisL1: 'Formular 210 (IRNR für Nichtansässige)',
+                fisL2: 'Formulare 211, 213 und 216',
+                fisL3: 'Erlangung der NIF für Nichtansässige',
+                fisL4: 'Steuerliche Vertretung von Nichtansässigen',
+                vehTitle: 'Verkehrs- und Fahrzeugverfahren',
+                vehL1: 'Zulassung importierter Fahrzeuge',
+                vehL2: 'Eigentumsübertragung (Umschreibung)',
+                vehL3: 'Zahlung der IVTM (Gemeindesteuer)',
+                vehL4: 'Verwaltung der DGT-Gebühren',
+                vehL5: 'Beglaubigte Übersetzung und Verwaltung technischer Datenblätter',
+                certTitle: 'Antrag auf Digitales Zertifikat',
+                certL1: 'Verwaltung der Erlangung des digitalen Zertifikats für natürliche Personen und Unternehmen.',
+                certL2: 'Umfassende Beratung zu Prozess und Nutzung.'
+            }
+        };
+
+        function changeLang(lang, btn) {
+            // Cambiar estilo activo
+            document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            // Cambiar textos PRINCIPALES
+            const t = translations[lang];
+            document.getElementById('page-title').innerText = t.pageTitle;
+            document.getElementById('hero-title').innerHTML = t.heroTitle;
+            document.getElementById('hero-desc').innerText = t.heroDesc;
+            document.getElementById('btn-call').innerText = t.btnCall;
+            document.getElementById('btn-services').innerText = t.btnServices;
+            document.getElementById('serv-title').innerText = t.secTitle;
+            
+            document.getElementById('s1-t').innerText = t.s1t;
+            document.getElementById('s1-d').innerText = t.s1d;
+            document.getElementById('s1-l1').innerText = t.s1l1;
+            document.getElementById('s1-l2').innerText = t.s1l2;
+            document.getElementById('s1-l3').innerText = t.s1l3;
+
+            document.getElementById('s2-t').innerText = t.s2t;
+            document.getElementById('s2-d').innerText = t.s2d;
+            document.getElementById('s2-l1').innerText = t.s2l1;
+            document.getElementById('s2-l2').innerText = t.s2l2;
+            document.getElementById('s2-l3').innerText = t.s2l3;
+
+            document.getElementById('s3-t').innerText = t.s3t;
+            document.getElementById('s3-d').innerText = t.s3d;
+            document.getElementById('s3-l1').innerText = t.s3l1;
+            document.getElementById('s3-l2').innerText = t.s3l2;
+            document.getElementById('s3-l3').innerText = t.s3l3;
+
+            document.getElementById('s4-t').innerText = t.s4t;
+            document.getElementById('s4-d').innerText = t.s4d;
+            document.getElementById('s4-l1').innerText = t.s4l1;
+            document.getElementById('s4-l2').innerText = t.s4l2;
+            document.getElementById('s4-l3').innerText = t.s4l3;
+
+            document.getElementById('s5-t').innerText = t.s5t;
+            document.getElementById('s5-d').innerText = t.s5d;
+            document.getElementById('s5-l1').innerText = t.s5l1;
+            document.getElementById('s5-l2').innerText = t.s5l2;
+            document.getElementById('s5-l3').innerText = t.s5l3;
+
+            document.getElementById('s6-t').innerText = t.s6t;
+            document.getElementById('s6-d').innerText = t.s6d;
+            document.getElementById('s6-l1').innerText = t.s6l1;
+            document.getElementById('s6-l2').innerText = t.s6l2;
+            document.getElementById('s6-l3').innerText = t.s6l3;
+
+            // Cambiar textos ADICIONALES
+            document.getElementById('add-serv-title').innerText = t.addServTitle;
+            document.getElementById('ext-title').innerText = t.extTitle;
+            document.getElementById('ext-l1').innerText = t.extL1;
+            document.getElementById('ext-l2').innerText = t.extL2;
+            document.getElementById('ext-l3').innerText = t.extL3;
+            document.getElementById('ext-l4').innerText = t.extL4;
+            document.getElementById('ext-l5').innerText = t.extL5;
+            document.getElementById('ext-l6').innerText = t.extL6;
+            document.getElementById('ext-l7').innerText = t.extL7;
+
+            document.getElementById('fis-title').innerText = t.fisTitle;
+            document.getElementById('fis-l1').innerText = t.fisL1;
+            document.getElementById('fis-l2').innerText = t.fisL2;
+            document.getElementById('fis-l3').innerText = t.fisL3;
+            document.getElementById('fis-l4').innerText = t.fisL4;
+            
+            document.getElementById('veh-title').innerText = t.vehTitle;
+            document.getElementById('veh-l1').innerText = t.vehL1;
+            document.getElementById('veh-l2').innerText = t.vehL2;
+            document.getElementById('veh-l3').innerText = t.vehL3;
+            document.getElementById('veh-l4').innerText = t.vehL4;
+            document.getElementById('veh-l5').innerText = t.vehL5;
+
+            document.getElementById('cert-title').innerText = t.certTitle;
+            document.getElementById('cert-l1').innerText = t.certL1;
+            document.getElementById('cert-l2').innerText = t.certL2;
+        }
+
+        // --- LÓGICA 3D ---
+        const hero = document.querySelector('.hero');
+        const carImg = document.getElementById('carImage');
+
+        hero.addEventListener('mousemove', (e) => {
+            const x = (window.innerWidth / 2 - e.pageX) / 90;
+            const y = (window.innerHeight / 2 - e.pageY) / 90;
+            carImg.style.transform = `translateZ(40px) rotateY(${x}deg) rotateX(${-y}deg)`;
+        });
+
+        function tiltCard(e, card) {
+            const rect = card.getBoundingClientRect();
+            const x = e.clientX - rect.left; 
+            const y = e.clientY - rect.top;
+            const cx = rect.width / 2;
+            const cy = rect.height / 2;
+            const rx = ((y - cy) / cy) * -5; 
+            const ry = ((x - cx) / cx) * 5;
+            card.style.transform = `perspective(1000px) rotateX(${rx}deg) rotateY(${ry}deg) scale(1.02)`;
+        }
+
+        function resetCard(card) {
+            card.style.transform = `perspective(1000px) rotateX(0) rotateY(0) scale(1)`;
+        }
+    </script>
+</body>
+</html>
